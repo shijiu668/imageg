@@ -60,26 +60,20 @@ export default function Home() {
   };
 
   const pollTaskStatus = async (taskId: string) => {
-    const maxAttempts = 60; // 最多轮询60次，每次间隔1秒
-    let attempts = 0;
+    while (true) {
+      const response = await fetch(`/api/tasks/${taskId}`);
+      const data = await response.json() as TaskResponse;
 
-    while (attempts < maxAttempts) {
-      const response = await fetch(`/api/tasks?taskId=${taskId}`);
-      const task = await response.json() as TaskResponse;
-
-      if (task.status === 'completed' && task.result?.url) {
-        setImageUrl(task.result.url);
-        setLoading(false);
-        return;
-      } else if (task.status === 'failed') {
-        throw new Error(task.error || '生成图片失败');
+      if (data.status === 'completed' && data.result?.url) {
+        setImageUrl(data.result.url);
+        break;
+      } else if (data.status === 'failed') {
+        setError(data.error || '生成图片失败');
+        break;
       }
 
-      attempts++;
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
-
-    throw new Error('生成图片超时');
   };
 
   const handleDownload = async () => {

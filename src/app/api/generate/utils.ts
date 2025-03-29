@@ -29,7 +29,7 @@ export async function generateImage(taskId: string, prompt: string) {
       result: {
         url: imageUrl
       }
-    });
+    } as Task);
   } catch (error) {
     console.error('Image generation error:', error);
     tasks.set(taskId, {
@@ -37,6 +37,6 @@ export async function generateImage(taskId: string, prompt: string) {
       status: 'failed',
       prompt,
       error: '生成图片失败'
-    });
+    } as Task);
   }
 }
