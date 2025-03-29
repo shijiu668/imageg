@@ -1,15 +1,13 @@
-import { OpenAI } from 'openai';
 import { NextResponse } from 'next/server';
-
-const client = new OpenAI({
-  baseURL: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
-  apiKey: process.env.OPENAI_API_KEY
-});
+import { generateImage } from './utils';
 
 type GenerateError = {
   message: string;
   status?: number;
 };
+
+import { tasks } from '../tasks/route';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: Request) {
   try {
@@ -22,16 +20,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const response = await client.images.generate({
-      model: "dall-e-3",
-      prompt,
-      n: 1,
-      size: "1024x1024"
-    });
+    const taskId = uuidv4();
+    const task = {
+      id: taskId,
+      status: 'pending' as const,
+      prompt
+    };
+    tasks.set(taskId, task);
 
-    return NextResponse.json({
-      url: response.data[0].url
-    });
+    // 异步处理图片生成
+    generateImage(taskId, prompt).catch(console.error);
+
+    return NextResponse.json({ taskId });
 
   } catch (error: unknown) {
     const err = error as GenerateError;

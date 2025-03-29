@@ -8,7 +8,17 @@ type ErrorResponse = {
 };
 
 type GenerateResponse = {
-  url: string;
+  taskId: string;
+};
+
+type TaskResponse = {
+  id: string;
+  status: 'pending' | 'completed' | 'failed';
+  prompt: string;
+  result?: {
+    url: string;
+  };
+  error?: string;
 };
 
 export default function Home() {
@@ -16,6 +26,7 @@ export default function Home() {
   const [imageUrl, setImageUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [taskId, setTaskId] = useState('');
 
   const generateImage = async () => {
     if (!prompt.trim()) {
@@ -39,12 +50,36 @@ export default function Home() {
         throw new Error((data as ErrorResponse).error || '生成图片失败');
       }
 
-      setImageUrl((data as GenerateResponse).url);
+      setTaskId((data as GenerateResponse).taskId);
+      await pollTaskStatus((data as GenerateResponse).taskId);
     } catch (error: unknown) {
       setError((error as Error).message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const pollTaskStatus = async (taskId: string) => {
+    const maxAttempts = 60; // 最多轮询60次，每次间隔1秒
+    let attempts = 0;
+
+    while (attempts < maxAttempts) {
+      const response = await fetch(`/api/tasks?taskId=${taskId}`);
+      const task = await response.json() as TaskResponse;
+
+      if (task.status === 'completed' && task.result?.url) {
+        setImageUrl(task.result.url);
+        setLoading(false);
+        return;
+      } else if (task.status === 'failed') {
+        throw new Error(task.error || '生成图片失败');
+      }
+
+      attempts++;
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    throw new Error('生成图片超时');
   };
 
   const handleDownload = async () => {
