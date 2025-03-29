@@ -6,6 +6,11 @@ const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
+type GenerateError = {
+  message: string;
+  status?: number;
+};
+
 export async function POST(request: Request) {
   try {
     const { prompt } = await request.json();
@@ -28,8 +33,9 @@ export async function POST(request: Request) {
       url: response.data[0].url
     });
 
-  } catch (error: any) {
-    console.error('Image generation error:', error);
+  } catch (error: unknown) {
+    const err = error as GenerateError;
+    console.error('Image generation error:', err);
     return NextResponse.json(
       { error: '生成图片时出错' },
       { status: 500 }

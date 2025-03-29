@@ -1,6 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
+
+type ErrorResponse = {
+  error: string;
+};
+
+type GenerateResponse = {
+  url: string;
+};
 
 export default function Home() {
   const [prompt, setPrompt] = useState('');
@@ -24,15 +33,15 @@ export default function Home() {
         body: JSON.stringify({ prompt })
       });
 
-      const data = await response.json();
+      const data = await response.json() as ErrorResponse | GenerateResponse;
 
       if (!response.ok) {
-        throw new Error(data.error || '生成图片失败');
+        throw new Error((data as ErrorResponse).error || '生成图片失败');
       }
 
-      setImageUrl(data.url);
-    } catch (err: any) {
-      setError(err.message);
+      setImageUrl((data as GenerateResponse).url);
+    } catch (error: unknown) {
+      setError((error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -52,7 +61,7 @@ export default function Home() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    } catch (err) {
+    } catch (error) {
       setError('下载图片失败');
     }
   };
@@ -93,10 +102,12 @@ export default function Home() {
         {imageUrl && (
           <div className="bg-white dark:bg-gray-800 shadow-xl rounded-lg p-6">
             <div className="relative aspect-square w-full mb-4 overflow-hidden rounded-lg">
-              <img
+              <Image
                 src={imageUrl}
                 alt="Generated image"
-                className="object-cover w-full h-full"
+                fill
+                className="object-cover"
+                priority
               />
             </div>
             <button
