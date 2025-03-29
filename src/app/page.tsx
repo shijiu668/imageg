@@ -61,7 +61,7 @@ export default function Home() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    } catch (error) {
+    } catch (_) {
       setError('下载图片失败');
     }
   };
