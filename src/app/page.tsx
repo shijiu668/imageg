@@ -126,6 +126,12 @@ export default function Home() {
               {error}
             </div>
           )}
+
+          {taskId && loading && (
+            <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/50 text-blue-600 dark:text-blue-200 rounded-lg">
+              正在处理任务 {taskId}...
+            </div>
+          )}
         </div>
 
         {imageUrl && (
